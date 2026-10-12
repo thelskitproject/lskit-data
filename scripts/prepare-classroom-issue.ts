@@ -1,6 +1,6 @@
 import { readFile, writeFile, appendFile } from "node:fs/promises";
 import { parseClassroomIssue } from "../lib/classroom-submission.ts";
-import { verifyRestore } from "./import-checkin-code.ts";
+import { verifyRestore } from "./verify-qr-matrix.ts";
 import type { CheckinCode } from "../lib/qr-code.ts";
 
 try {

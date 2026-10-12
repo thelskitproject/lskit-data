@@ -44,19 +44,3 @@ export function decodeMatrix(matrix: string) {
         }).join(""),
     );
 }
-
-export function matchesCheckinCode(
-    entry: CheckinCode,
-    query: string,
-    buildings: readonly string[] = [],
-) {
-    if (buildings.length && !buildings.includes(entry.buildingName))
-        return false;
-    const text =
-        `${entry.buildingName} ${entry.roomName ?? ""} ${entry.roomNumber}`.toLowerCase();
-    return query
-        .trim()
-        .toLowerCase()
-        .split(/\s+/)
-        .every((word) => text.includes(word));
-}

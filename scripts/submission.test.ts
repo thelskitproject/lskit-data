@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { parseClassroomIssue } from "../lib/classroom-submission.ts";
-import { verifyRestore } from "./import-checkin-code.ts";
+import { verifyRestore } from "./verify-qr-matrix.ts";
 
 test("all stored matrices restore and issue parser rejects malformed input", async () => {
     const entries = JSON.parse(

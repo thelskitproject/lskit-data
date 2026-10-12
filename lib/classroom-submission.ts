@@ -1,8 +1,5 @@
 import { decodeMatrix, type CheckinCode } from "./qr-code.ts";
 
-export const classroomIssueURL =
-    "https://github.com/thelskitproject/lskit-data/issues/new?template=add-classroom.yml";
-
 export function validateClassroomSubmission(value: unknown): CheckinCode {
     if (!value || typeof value !== "object" || Array.isArray(value))
         throw new Error("请提供一条教室 JSON 记录。");
