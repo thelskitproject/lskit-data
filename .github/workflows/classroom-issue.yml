@@ -1,0 +1,63 @@
+name: Classroom issue to PR
+
+on:
+    issues:
+        types: [opened, edited, reopened]
+
+permissions:
+    contents: write
+    pull-requests: write
+    issues: write
+
+concurrency:
+    group: classroom-issue-${{ github.event.issue.number }}
+    cancel-in-progress: false
+
+jobs:
+    submit:
+        if: startsWith(github.event.issue.title, '[新增教室]') && github.event.issue.state == 'open'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  ref: ${{ github.event.repository.default_branch }}
+            - uses: pnpm/action-setup@v4
+              with:
+                  version: 11
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: "24"
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm test
+            - name: Validate submission
+              id: validate
+              continue-on-error: true
+              run: node scripts/prepare-classroom-issue.ts
+            - name: Explain invalid submission
+              if: steps.validate.outcome == 'failure'
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  ISSUE_NUMBER: ${{ github.event.issue.number }}
+              run: gh issue comment "$ISSUE_NUMBER" --body-file /tmp/classroom-issue-error.txt
+            - name: Create or update PR
+              if: steps.validate.outputs.valid == 'true'
+              id: pr
+              uses: peter-evans/create-pull-request@v8
+              with:
+                  branch: classroom-issue-${{ github.event.issue.number }}
+                  add-paths: checkin-codes.json
+                  commit-message: "Add classroom from issue #${{ github.event.issue.number }}"
+                  title: "Add classroom from issue #${{ github.event.issue.number }}"
+                  body: |
+                      校验通过：字段、矩阵格式、二维码还原、重复教室检查。
+                      请维护者核对教室信息和二维码图案后合并。
+
+                      Closes #${{ github.event.issue.number }}
+            - name: Link PR in issue
+              if: steps.pr.outputs.pull-request-operation == 'created'
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  ISSUE_NUMBER: ${{ github.event.issue.number }}
+                  PR_URL: ${{ steps.pr.outputs.pull-request-url }}
+              run: gh issue comment "$ISSUE_NUMBER" --body "已生成 PR：$PR_URL。等待维护者审核。"

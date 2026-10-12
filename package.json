@@ -1,0 +1,14 @@
+{
+    "name": "lskit-data",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "test": "node --test scripts/submission.test.ts",
+        "import:qr": "node scripts/import-checkin-code.ts"
+    },
+    "dependencies": {
+        "jsqr": "1.4.0",
+        "sharp": "0.35.5",
+        "zxing-wasm": "3.1.5"
+    }
+}
