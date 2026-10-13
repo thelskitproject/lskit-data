@@ -33,7 +33,7 @@ try {
 } catch (error) {
     await writeFile(
         "/tmp/classroom-issue-error.txt",
-        `Unable to create a pull request: ${error instanceof Error ? error.message : "Record validation failed."}\n\nPlease correct the record in this issue. Validation will run again when you edit the issue.`,
+        `Thank you for contributing to LSKit!\n\nUnable to create a pull request: ${error instanceof Error ? error.message : "Record validation failed."}\n\nPlease correct the record in this issue. Validation will run again when you edit the issue.`,
     );
     process.exitCode = 1;
 }

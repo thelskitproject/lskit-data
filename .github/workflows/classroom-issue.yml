@@ -50,6 +50,8 @@ jobs:
                   commit-message: "Add classroom from issue #${{ github.event.issue.number }}"
                   title: "Add classroom from issue #${{ github.event.issue.number }}"
                   body: |
+                      Thank you for contributing to LSKit!
+
                       Adds a classroom record submitted in the linked issue.
                       Validation passed: required fields, matrix format, QR restoration, and duplicate checks.
                       Please verify the classroom details and QR pattern before merging.
@@ -62,5 +64,5 @@ jobs:
                   ISSUE_NUMBER: ${{ github.event.issue.number }}
                   PR_URL: ${{ steps.pr.outputs.pull-request-url }}
               run: |
-                  printf 'Pull request created: [View pull request](%s)\n\nAwaiting maintainer review.\n' "$PR_URL" > /tmp/classroom-issue-pr.txt
+                  printf 'Thank you for sharing this classroom QR code!\n\nPull request created: [View pull request](%s)\n\nAwaiting maintainer review.\n' "$PR_URL" > /tmp/classroom-issue-pr.txt
                   gh issue comment "$ISSUE_NUMBER" --body-file /tmp/classroom-issue-pr.txt
