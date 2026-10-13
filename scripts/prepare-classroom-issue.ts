@@ -23,7 +23,7 @@ try {
         )
     )
         throw new Error(
-            "该教学楼和房间号已经收录，请由维护者确认是否需要更新。",
+            "This building and room number are already listed. A maintainer must review any update.",
         );
     await writeFile(
         destination,
@@ -33,7 +33,7 @@ try {
 } catch (error) {
     await writeFile(
         "/tmp/classroom-issue-error.txt",
-        `无法生成 PR：${error instanceof Error ? error.message : "记录校验失败"}\n\n请修改 Issue 中的记录后重试。`,
+        `Unable to create a pull request: ${error instanceof Error ? error.message : "Record validation failed."}\n\nPlease correct the record in this issue. Validation will run again when you edit the issue.`,
     );
     process.exitCode = 1;
 }
