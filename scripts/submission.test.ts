@@ -11,8 +11,54 @@ import {
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { parseClassroomIssue } from "../lib/classroom-submission.ts";
+import {
+    parseClassroomIssue,
+    appendClassroomRecord,
+    canRefreshClassroomPR,
+} from "../lib/classroom-submission.ts";
 import { verifyRestore } from "./verify-qr-matrix.ts";
+
+test("refresh after B merges retains B and only adds A", async () => {
+    const entries = JSON.parse(
+        await readFile(
+            new URL("../checkin-codes.json", import.meta.url),
+            "utf8",
+        ),
+    );
+    const a = { ...entries[0], roomNumber: "pending-A" };
+    const b = { ...entries[0], roomNumber: "merged-B" };
+    const headA = appendClassroomRecord(entries, a);
+    const mainB = appendClassroomRecord(entries, b);
+    const files = ["checkin-codes.json", "checkin-codes.min.json"];
+    const compact = JSON.stringify(headA) + "\n";
+    assert.equal(
+        canRefreshClassroomPR(entries, headA, a, files, compact),
+        true,
+    );
+    const refreshed = appendClassroomRecord(mainB, a);
+    assert.deepEqual(refreshed, [...entries, b, a]);
+    assert.equal(
+        canRefreshClassroomPR(entries, [...headA, b], a, files, compact),
+        false,
+    );
+    assert.equal(
+        canRefreshClassroomPR(
+            entries,
+            headA,
+            a,
+            [...files, "README.md"],
+            compact,
+        ),
+        false,
+    );
+    assert.equal(
+        canRefreshClassroomPR(entries, headA, a, files, "[]\n"),
+        false,
+    );
+    assert.throws(() =>
+        appendClassroomRecord(mainB, { ...b, matrix: a.matrix }),
+    );
+});
 
 test("compact generation preserves all fields and refuses invalid source data", async () => {
     const directory = await mkdtemp(join(tmpdir(), "lskit-minify-"));

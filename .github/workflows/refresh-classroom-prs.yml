@@ -1,0 +1,33 @@
+name: Refresh pending classroom PRs
+
+on:
+    push:
+        branches: [main]
+        paths:
+            - checkin-codes.json
+            - .github/workflows/refresh-classroom-prs.yml
+    workflow_dispatch:
+
+permissions:
+    contents: write
+    pull-requests: read
+    issues: read
+
+concurrency:
+    group: refresh-classroom-prs
+    cancel-in-progress: false
+
+jobs:
+    refresh:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  ref: main
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: "24"
+            - name: Refresh unmodified bot submissions
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: node scripts/refresh-classroom-prs.ts

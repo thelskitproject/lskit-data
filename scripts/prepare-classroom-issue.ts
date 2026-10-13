@@ -1,5 +1,8 @@
 import { readFile, writeFile, appendFile } from "node:fs/promises";
-import { parseClassroomIssue } from "../lib/classroom-submission.ts";
+import {
+    parseClassroomIssue,
+    appendClassroomRecord,
+} from "../lib/classroom-submission.ts";
 import { verifyRestore } from "./verify-qr-matrix.ts";
 import type { CheckinCode } from "../lib/qr-code.ts";
 
@@ -13,22 +16,8 @@ try {
     const entries: CheckinCode[] = JSON.parse(
         await readFile(destination, "utf8"),
     );
-    if (
-        entries.some(
-            (entry) =>
-                entry.buildingName.toLowerCase() ===
-                    record.buildingName.toLowerCase() &&
-                entry.roomNumber.toLowerCase() ===
-                    record.roomNumber.toLowerCase(),
-        )
-    )
-        throw new Error(
-            "This building and room number are already listed. A maintainer must review any update.",
-        );
-    await writeFile(
-        destination,
-        JSON.stringify([...entries, record], null, 4) + "\n",
-    );
+    const updated = appendClassroomRecord(entries, record);
+    await writeFile(destination, JSON.stringify(updated, null, 4) + "\n");
     await appendFile(process.env.GITHUB_OUTPUT!, "valid=true\n");
 } catch (error) {
     await writeFile(

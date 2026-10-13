@@ -2,7 +2,9 @@ import { decodeMatrix, type CheckinCode } from "./qr-code.ts";
 
 export function validateClassroomSubmission(value: unknown): CheckinCode {
     if (!value || typeof value !== "object" || Array.isArray(value))
-        throw new Error("Please provide one classroom record as a JSON object.");
+        throw new Error(
+            "Please provide one classroom record as a JSON object.",
+        );
     const record = value as Record<string, unknown>;
     if (
         Object.keys(record).sort().join(",") !==
@@ -20,7 +22,9 @@ export function validateClassroomSubmission(value: unknown): CheckinCode {
             text.length > 200 ||
             /[\u0000-\u001f\u007f]/.test(text)
         )
-            throw new Error(`${key} must be a valid name of at most 200 characters.`);
+            throw new Error(
+                `${key} must be a valid name of at most 200 characters.`,
+            );
         return text.trim();
     }
     const buildingName = name("buildingName")!;
@@ -38,4 +42,43 @@ export function parseClassroomIssue(body: string): CheckinCode {
     if (blocks.length !== 1)
         throw new Error("Please provide exactly one json code block.");
     return validateClassroomSubmission(JSON.parse(blocks[0][1]));
+}
+
+export function appendClassroomRecord(
+    entries: CheckinCode[],
+    record: CheckinCode,
+) {
+    if (
+        entries.some(
+            (entry) =>
+                entry.buildingName.toLowerCase() ===
+                    record.buildingName.toLowerCase() &&
+                entry.roomNumber.toLowerCase() ===
+                    record.roomNumber.toLowerCase(),
+        )
+    )
+        throw new Error(
+            "This building and room number are already listed. A maintainer must review any update.",
+        );
+    return [...entries, record];
+}
+
+export function canRefreshClassroomPR(
+    base: CheckinCode[],
+    head: CheckinCode[],
+    record: CheckinCode,
+    files: string[],
+    compact: string,
+) {
+    return (
+        files.length > 0 &&
+        files.every(
+            (file) =>
+                file === "checkin-codes.json" ||
+                file === "checkin-codes.min.json",
+        ) &&
+        JSON.stringify(head) ===
+            JSON.stringify(appendClassroomRecord(base, record)) &&
+        compact === JSON.stringify(head) + "\n"
+    );
 }
