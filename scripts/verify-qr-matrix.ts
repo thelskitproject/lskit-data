@@ -37,11 +37,11 @@ export function verifyRestore(
                 JSON.stringify(decoded.chunks) !==
                     JSON.stringify(expected.chunks)))
     ) {
-        throw new Error("二维码还原校验失败，未写入文件。");
+        throw new Error("QR restoration validation failed. No data was saved.");
     }
     const extracted = extractMatrix(pixels, size, size, decoded);
     if (encodeMatrix(extracted) !== packed) {
-        throw new Error("二维码模块图案校验失败，未写入文件。");
+        throw new Error("QR module pattern validation failed. No data was saved.");
     }
     return decoded;
 }

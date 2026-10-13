@@ -40,18 +40,26 @@ jobs:
                   GH_TOKEN: ${{ github.token }}
                   ISSUE_NUMBER: ${{ github.event.issue.number }}
               run: gh issue comment "$ISSUE_NUMBER" --body-file /tmp/classroom-issue-error.txt
+            - name: Generate compact records
+              if: steps.validate.outputs.valid == 'true'
+              run: node scripts/minify-checkin-codes.ts
             - name: Create or update PR
               if: steps.validate.outputs.valid == 'true'
               id: pr
               uses: peter-evans/create-pull-request@v8
               with:
                   branch: classroom-issue-${{ github.event.issue.number }}
-                  add-paths: checkin-codes.json
+                  add-paths: |
+                      checkin-codes.json
+                      checkin-codes.min.json
                   commit-message: "Add classroom from issue #${{ github.event.issue.number }}"
                   title: "Add classroom from issue #${{ github.event.issue.number }}"
                   body: |
-                      校验通过：字段、矩阵格式、二维码还原、重复教室检查。
-                      请维护者核对教室信息和二维码图案后合并。
+                      Thank you for contributing to LSKit!
+
+                      Adds a classroom record submitted in the linked issue and updates the compact JSON in the same PR.
+                      Validation passed: required fields, matrix format, QR restoration, and duplicate checks.
+                      Please verify the classroom details and QR pattern before merging.
 
                       Closes #${{ github.event.issue.number }}
             - name: Link PR in issue
@@ -60,4 +68,6 @@ jobs:
                   GH_TOKEN: ${{ github.token }}
                   ISSUE_NUMBER: ${{ github.event.issue.number }}
                   PR_URL: ${{ steps.pr.outputs.pull-request-url }}
-              run: gh issue comment "$ISSUE_NUMBER" --body "已生成 PR：$PR_URL。等待维护者审核。"
+              run: |
+                  printf 'Thank you for sharing this classroom QR code!\n\nPull request created: [View pull request](%s)\n\nAwaiting maintainer review.\n' "$PR_URL" > /tmp/classroom-issue-pr.txt
+                  gh issue comment "$ISSUE_NUMBER" --body-file /tmp/classroom-issue-pr.txt
