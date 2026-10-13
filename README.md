@@ -9,7 +9,7 @@
 | 字段 | 内容 |
 | --- | --- |
 | `buildingName` | 教学楼名称 |
-| `roomName` | 房间名称，未知时为 `null` |
+| `roomName` | 照片上的房间名称原文，不含房间号；新增提交必填，既有 `null` 记录保留 |
 | `roomNumber` | 房间号，按字符串保存 |
 | `matrix` | 二维码黑白模块矩阵的 Base64 |
 

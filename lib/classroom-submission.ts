@@ -41,7 +41,12 @@ export function parseClassroomIssue(body: string): CheckinCode {
     const blocks = [...body.matchAll(/^```json\s*\n([\s\S]*?)^```\s*$/gm)];
     if (blocks.length !== 1)
         throw new Error("Please provide exactly one json code block.");
-    return validateClassroomSubmission(JSON.parse(blocks[0][1]));
+    const record = validateClassroomSubmission(JSON.parse(blocks[0][1]));
+    if (!record.roomName)
+        throw new Error(
+            "roomName is required. Copy the room label exactly as shown in the photo, without the room number.",
+        );
+    return record;
 }
 
 export function appendClassroomRecord(

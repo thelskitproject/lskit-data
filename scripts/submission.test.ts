@@ -125,4 +125,12 @@ test("all stored matrices restore and issue parser rejects malformed input", asy
     assert.throws(() =>
         parseClassroomIssue('```json\n{"buildingName":"x"}\n```'),
     );
+    const missingName = { ...entries[0], roomName: null };
+    assert.throws(
+        () =>
+            parseClassroomIssue(
+                `\`\`\`json\n${JSON.stringify(missingName)}\n\`\`\``,
+            ),
+        /roomName is required/,
+    );
 });
