@@ -1,0 +1,36 @@
+name: Merge approved PR
+
+on:
+    pull_request_review:
+        types: [submitted]
+
+permissions:
+    contents: write
+    pull-requests: write
+    actions: write
+
+concurrency:
+    group: merge-approved-classroom-prs
+    cancel-in-progress: false
+
+jobs:
+    merge:
+        if: >-
+            github.event.review.state == 'approved' &&
+            github.event.review.user.login == 'AreroKetahi' &&
+            github.event.pull_request.base.ref == 'main' &&
+            github.event.pull_request.state == 'open' &&
+            github.event.review.commit_id == github.event.pull_request.head.sha &&
+            github.event.pull_request.head.repo.full_name == github.repository
+        runs-on: ubuntu-latest
+        env:
+            GH_TOKEN: ${{ github.token }}
+            GH_REPO: ${{ github.repository }}
+            PR_NUMBER: ${{ github.event.pull_request.number }}
+            HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        steps:
+            - name: Merge the approved commit and delete its branch
+              run: gh pr merge "$PR_NUMBER" --squash --delete-branch --match-head-commit "$HEAD_SHA"
+            # Merges with GITHUB_TOKEN do not trigger the push workflow.
+            - name: Refresh pending classroom PRs
+              run: gh workflow run refresh-classroom-prs.yml --ref main
