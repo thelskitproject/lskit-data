@@ -1,74 +1,64 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import {
+    readFile,
+    mkdtemp,
+    mkdir,
+    writeFile,
+    copyFile,
+    rm,
+} from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { parseClassroomIssue } from "../lib/classroom-submission.ts";
 import { verifyRestore } from "./verify-qr-matrix.ts";
-import { validateCompactPR } from "./merge-compact-records.ts";
 
-test("automatic merge only accepts the exact bot-generated compact file", () => {
-    const repository = "thelskitproject/lskit-data";
-    const pr = {
-        user: { login: "github-actions[bot]" },
-        base: { ref: "main", sha: "current" },
-        head: {
-            ref: "bot/minify-checkin-codes",
-            repo: { full_name: repository },
-        },
-        state: "open",
-        draft: false,
-    };
-    const files = ["checkin-codes.min.json"];
-    const source = '[{"roomNumber":"G.89"}]';
-    const compact = source + "\n";
-    assert.doesNotThrow(() =>
-        validateCompactPR(pr, files, repository, "current", source, compact),
-    );
-    assert.throws(() =>
-        validateCompactPR(
-            pr,
-            ["checkin-codes.json"],
-            repository,
-            "current",
-            source,
+test("compact generation preserves all fields and refuses invalid source data", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "lskit-minify-"));
+    try {
+        await mkdir(join(directory, "scripts"));
+        await mkdir(join(directory, "lib"));
+        for (const file of [
+            "scripts/minify-checkin-codes.ts",
+            "lib/classroom-submission.ts",
+            "lib/qr-code.ts",
+        ])
+            await copyFile(
+                new URL(`../${file}`, import.meta.url),
+                join(directory, file),
+            );
+        await writeFile(join(directory, "package.json"), '{"type":"module"}');
+        const source = await readFile(
+            new URL("../checkin-codes.json", import.meta.url),
+            "utf8",
+        );
+        await writeFile(join(directory, "checkin-codes.json"), source);
+        const run = () =>
+            execFileSync(
+                process.execPath,
+                [join(directory, "scripts/minify-checkin-codes.ts")],
+                { stdio: "pipe" },
+            );
+        run();
+        const compact = await readFile(
+            join(directory, "checkin-codes.min.json"),
+            "utf8",
+        );
+        assert.deepEqual(JSON.parse(compact), JSON.parse(source));
+        assert.equal(compact.trim().split("\n").length, 1);
+        await writeFile(
+            join(directory, "checkin-codes.json"),
+            '[{"matrix":"invalid"}]',
+        );
+        assert.throws(run);
+        assert.equal(
+            await readFile(join(directory, "checkin-codes.min.json"), "utf8"),
             compact,
-        ),
-    );
-    assert.throws(() =>
-        validateCompactPR(
-            pr,
-            [...files, "README.md"],
-            repository,
-            "current",
-            source,
-            compact,
-        ),
-    );
-    assert.throws(() =>
-        validateCompactPR(
-            { ...pr, user: { login: "someone" } },
-            files,
-            repository,
-            "current",
-            source,
-            compact,
-        ),
-    );
-    assert.throws(() =>
-        validateCompactPR(
-            { ...pr, head: { ...pr.head, ref: "classroom-issue-1" } },
-            files,
-            repository,
-            "current",
-            source,
-            compact,
-        ),
-    );
-    assert.throws(() =>
-        validateCompactPR(pr, files, repository, "newer", source, compact),
-    );
-    assert.throws(() =>
-        validateCompactPR(pr, files, repository, "current", source, "[]\n"),
-    );
+        );
+    } finally {
+        await rm(directory, { recursive: true, force: true });
+    }
 });
 
 test("all stored matrices restore and issue parser rejects malformed input", async () => {

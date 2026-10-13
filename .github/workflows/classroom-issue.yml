@@ -40,19 +40,24 @@ jobs:
                   GH_TOKEN: ${{ github.token }}
                   ISSUE_NUMBER: ${{ github.event.issue.number }}
               run: gh issue comment "$ISSUE_NUMBER" --body-file /tmp/classroom-issue-error.txt
+            - name: Generate compact records
+              if: steps.validate.outputs.valid == 'true'
+              run: node scripts/minify-checkin-codes.ts
             - name: Create or update PR
               if: steps.validate.outputs.valid == 'true'
               id: pr
               uses: peter-evans/create-pull-request@v8
               with:
                   branch: classroom-issue-${{ github.event.issue.number }}
-                  add-paths: checkin-codes.json
+                  add-paths: |
+                      checkin-codes.json
+                      checkin-codes.min.json
                   commit-message: "Add classroom from issue #${{ github.event.issue.number }}"
                   title: "Add classroom from issue #${{ github.event.issue.number }}"
                   body: |
                       Thank you for contributing to LSKit!
 
-                      Adds a classroom record submitted in the linked issue.
+                      Adds a classroom record submitted in the linked issue and updates the compact JSON in the same PR.
                       Validation passed: required fields, matrix format, QR restoration, and duplicate checks.
                       Please verify the classroom details and QR pattern before merging.
 
